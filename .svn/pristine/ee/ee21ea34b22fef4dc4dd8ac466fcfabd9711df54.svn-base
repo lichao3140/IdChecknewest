@@ -1,0 +1,59 @@
+#include "android/log.h"
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <jni.h>
+#include <stdlib.h>
+#include "telpoutil.h"
+
+
+
+#define LOG_TAG  "Util"
+#define POWER_PATH "/dev/telpoio"
+#define MTK_POWER_PATH "/dev/dev_power"
+#define MTK_POWER_PATH2 "/dev/otg_power"
+
+
+int idcard_power(int arg)
+{
+	int iFd = 0;
+	int err = -1;
+
+    iFd = open(POWER_PATH, O_RDWR);
+    if (iFd > 0)
+    {
+		if (IDCARD_ENABLE == arg)
+		{
+			err = ioctl(iFd, TELPO_IOCTL_ID_CARD_POWON);
+
+			close(iFd);
+			if (err < 0)
+			{
+
+				return -1;
+			}
+			else
+			{
+
+				return 0;
+			}
+		}
+		else if (IDCARD_DISABLE == arg)
+		{
+			err = ioctl(iFd, TELPO_IOCTL_ID_CARD_POWOFF);
+			close(iFd);
+			if (err < 0)
+			{
+
+				return -1;
+			}
+			else
+			{
+
+				return 0;
+			}
+		}
+    }
+	return err;
+}

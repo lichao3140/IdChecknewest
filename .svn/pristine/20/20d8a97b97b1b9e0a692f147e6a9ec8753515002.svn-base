@@ -1,0 +1,114 @@
+package com.techshino.fingerprint;
+
+/**
+ * JNI 需要依靠此配置改变函数功能
+ * @author tony-notebook
+ *
+ */
+public class FPConfig {
+
+	public static final int IMAGE_TYPE_GREY = 0;	//灰色纹理
+	public static final int IMAGE_TYPE_RED = 1;		//红色纹理
+
+	public static final int FEATURE_TYPE_BASE64 = 0;	//BIN with base64
+	public static final int FEATURE_TYPE_0x30 = 1;		//BIN with 0x30
+	public static final int FEATURE_TYPE_BIN = 2;		//BIN
+	public static final int FEATURE_TYPE_ISO = 3;		//ISO/交行
+	public static final int FEATURE_TYPE_OLDBASE64 = 4;	//old teso base64
+	public static final int FEATURE_TYPE_GA = 5;		//GA
+
+	public static final int FEATURE_TYPE_V500_GA = 6;		//GA
+	//公安格式用
+	public static final int RIGHT_THUMB = 0x0B;		//右手拇指
+	public static final int RIGHT_INDEX = 0x0C;		//右手食指
+	public static final int RIGHT_MIDDLE = 0x0D;	//右手中指
+	public static final int RIGHT_RING = 0x0E;		//右手环指
+	public static final int RIGHT_LITTLE = 0x0F;	//右手小指
+
+	public static final int LEFT_THUMB = 0x10; 		//左手拇指
+	public static final int LEFT_INDEX = 0x11; 		//左手食指
+	public static final int LEFT_MIDDLE = 0x12; 	//左手中指
+	public static final int LEFT_RING = 0x13; 		//左手环指
+	public static final int LEFT_LITTLE = 0x14; 	//左手小指
+
+	public static final int RIGHT_UNKNOWN = 0x61; 	//右手不确定指位
+	public static final int LEFT_UNKNOWN = 0x62; 	//左手不确定指位
+	public static final int UNKNOWN = 0x63; 		//不确定指位
+
+	//Inernational for V500 algorithm
+	public static final int FEATURE_INTERNATIONAL_PROPRIETARY_FORMAT = 7;
+	public static final int FEATURE_INTERNATIONAL_ISO_19794_2_2005 = 8;
+	public static final int FEATURE_INTERNATIONAL_INCITS_378_2004 = 9;
+	public static final int FEATURE_INTERNATIONAL_INCITS_378_2009 = 10;
+	public static final int FEATURE_INTERNATIONAL_ISO_19794_2_2011 = 11;
+
+	public static final int NFIQ_EXCELLENT = 1;
+	public static final int NFIQ_VERY_GOOD = 2;
+	public static final int NFIQ_GOOD = 3;
+	public static final int NFIQ_FAIR = 4;
+	public static final int NFIQ_POOR = 5;
+
+	public static final int  Unknown = 0 ;
+	public static final int Right_Thumb = 1;
+	public static final int Right_Index = 2 ;
+	public static final int Right_Middle = 3 ;
+	public static final int Right_Ring = 4;
+	public static final int Right_Little = 5;
+	public static final int Left_Thumb = 6;
+	public static final int Left_Index = 7;
+	public static final int Left_Middle = 8 ;
+	public static final int Left_Ring = 9 ;
+	public static final int Left_Little = 10;
+
+	/*********************************************************/
+	private static int scannerType = 0x00; 				//默认指纹采集器代码
+	private static int imageType = IMAGE_TYPE_GREY;		//默认灰色图像
+	//注意：公安格式与ISO指位代码不兼容
+	//GA
+//	private static int fingerCode  = UNKNOWN;		//默认指位代码
+//	private static int featureType = FEATURE_TYPE_V500_GA;
+	
+	//ISO 19794-2
+	private static int fingerCode  = Unknown;		//默认指位代码
+	private static int featureType = FEATURE_INTERNATIONAL_ISO_19794_2_2011;
+
+	private static int qualitythreshold = NFIQ_GOOD; //GA 默认60， NFIQ默认 NFIQ_GOOD
+	private static int compareScorethreshold = 1200; //GA 默认60， NFIQ默认1200
+
+	public static int getImageType() {
+		return imageType;
+	}
+	public static void setImageType(int imageType) {
+		FPConfig.imageType = imageType;
+	}
+	public static int getFeatureType() {
+		return featureType;
+	}
+	public static void setFeatureType(int featureType) {
+		FPConfig.featureType = featureType;
+	}
+	public static int getScannerType() {
+		return scannerType;
+	}
+	public static void setScannerType(int scannerType) {
+		FPConfig.scannerType = scannerType;
+	}
+	public static int getFingerCode() {
+		return fingerCode;
+	}
+	public static void setFingerCode(int fingerCode) {
+		FPConfig.fingerCode = fingerCode;
+	}
+	public static int getQualitythreshold() {
+		return qualitythreshold;
+	}
+	public static void setQualitythreshold(int qualitythreshold) {
+		FPConfig.qualitythreshold = qualitythreshold;
+	}
+	public static int getCompareScorethreshold() {
+		return compareScorethreshold;
+	}
+	public static void setCompareScorethreshold(int compareScorethreshold) {
+		FPConfig.compareScorethreshold = compareScorethreshold;
+	}
+}

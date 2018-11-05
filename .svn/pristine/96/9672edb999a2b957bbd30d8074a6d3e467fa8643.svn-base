@@ -1,0 +1,9 @@
+package com.telpo.finger;
+
+public class FingerprintPowerManager {
+	
+	public static native int SetFingerPower(int arg);
+	static {
+        System.loadLibrary("fppm");
+    }
+}

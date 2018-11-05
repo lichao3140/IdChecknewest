@@ -1,0 +1,110 @@
+package com.techshino.fingerprint;
+
+//返回值定义
+//#define TCY_SUCC				0					/* 成功操作 */
+//#define TCY_FAIL				-1					/* 失败结果 */
+//#define TCY_ERRO				-2					/* 校验错误 */
+//#define TCY_PARA				-3					/* 参数错误 */
+//#define TCY_EMPT				-4					/* 空特征库 */
+//#define TCY_NOFP				-5					/* 未按或孬 */
+//#define TCY_NSAM				-6					/* 值不相关 */
+//#define TCY_NMAT				-7					/* 值不匹配 */
+//#define TCY_NMEM				-8					/* 内存不足 */
+//#define TCY_FLSH				-9					/* 有闪存错 */
+//#define TCY_NODV				-10					/* 传感器错 */
+//#define TCY_TOLV				-11					/* 请抬起手 */
+//#define TCY_NSUP				-12					/* 不支持令 */
+//#define TCY_TMOT				-13					/* 操作超时 */
+//#define TCY_BUSY				-14					/* 我很忙啊 */
+//#define TCY_NLNK				-15					/* 设备断开 */
+//#define TCY_LESS				-16					/* 特点过少 */
+//#define TCY_CNCL				-17					/* 取消操作 */
+//#define TCY_FILE				-18					/* 文件错误 */
+//
+//#define LIC_NONE				-19					/* 狗狗不在 */
+//#define LIC_TMOT				-20					/* 狗已老啦 */
+//#define LIC_BIND				-21					/* 狗非本属 */
+//#define LIC_DEAT				-22					/* 许可已销 */
+//#define LIC_NMCN				-23					/* 无机器码 */
+//#define LIC_DISK				-24					/* 无权IO盘 */
+
+public class FingerJNI {
+	{
+		System.loadLibrary("ImageProc");
+	}
+	
+	/**
+    *
+    * @param nStyle    支持多种功能预留
+    * @param fd        带有权限的USB句柄
+    * @param pOutMsg   输出信息预留
+    * @return 返回值定义
+    */
+   public native int TCFP_Init(int nStyle, int fd, String pOutMsg);
+
+   /**
+    *
+    * @return
+    */
+   public native int TCFP_UnInit();
+
+   /**
+    *
+    * @param nOptCfg
+    * @param nOptVal
+    * @param pOutMsg
+    * @return
+    */
+   public native int TCFP_Version(int nOptCfg, int[] nOptVal, byte[]  pOutMsg);
+
+	/**
+	 * 
+	 * @param greyBmp bmp image
+	 * @param greyRaw raw data in bmp image, use in get feature
+	 * @return NFIQ value (0 ~ 5) for this image
+	 */
+	public native int TCFP_ImageExtract(byte[] greyBmp, byte[] greyRaw);
+	
+	/**
+     * 图片质量分数              当指纹特征类型选择为International时，返回NFIQ，其他情况下返回0～100分值
+     * @param image             图片大小
+     * @param imageAttr			图片属性，imageAttr[0]图片长度，imageAttr[1]图片宽度
+     * @return  普通     分值范围0~100
+     *          国际     NFIQ_EXCELLENT 1
+     *                  NFIQ_VERY_GOOD 2;
+     *                  NFIQ_GOOD  3;
+     *                  NFIQ_FAIR  4;
+     *                  NFIQ_POOR  5;
+     */
+    public native int TCFP_GetQualityScore(byte[] image, int imageLenght, int[] imageAttr);
+
+    /**
+     * 提取图片中指纹特征
+     * @param feature 			特征缓冲区大小
+     * @param image             图片数据区
+     * @param imageLength       图片大小
+     * @param imageAttr			图片属性，imageAttr[0]图片长度，imageAttr[1]图片宽度
+     * @return  >0 返回特征长度
+     *           <0 失败
+     */
+    public native int TCFP_FeatureExtract(byte[] feature, byte[] image, int imageLength, int[] imageAttr);
+
+    /**
+     *
+     * @param featureData 		特征
+     * @param featureTemplet 	模板或特征
+     * @return  0 to 100
+     */
+    public native int TCFP_FeatureMatch(byte[] featureData, int featureLenght, byte[] featureTemplet, int templetLenght);
+    /**
+     * TESO格式中三个特征合成一个模板
+     * @param Feature0
+     * @param Feature1
+     * @param Feature2
+     * @param templet
+     * @return 返回值定义
+     */
+    public native int TCFP_FeatureTempletExtract(byte[] Feature0, byte[] Feature1, byte[] Feature2, byte[] templet);
+    
+    public native int TCFP_GetSN(byte[] b);
+}

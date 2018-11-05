@@ -1,0 +1,138 @@
+package com.telpo.finger;
+
+import android.content.Context;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
+import android.os.Handler;
+import android.util.Log;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import com.techshino.fingerprint.FPConfig;
+import com.techshino.fingerprint.FingerJNI;
+
+public class FingerPreview {
+
+	public FingerJNI fingerJNI;
+	protected Context mContext;
+	protected Handler mhandler;
+	public boolean isworking = false;
+	public boolean isInit = false;
+	public float score;
+	private int current_PID = 0x64ab;
+
+	private int ignorelatestimage = 0;// 视频流会有延迟
+
+	public static byte[] grey_bmp_buffer = new byte[256 * 360 + 1024 + 54];
+	public static byte[] feature = new byte[513];
+	public static byte[] feature0 = new byte[513];
+	public static byte[] feature1 = new byte[513];
+	public static byte[] feature2 = new byte[513];
+	public static byte[] feature_templet = new byte[513];
+	public static byte[] grey_bmpdata_buffer = new byte[256 * 360 * 4 / 3];
+	public int outoftime_count = 0;
+	
+	public static int nfiqValue = 0;
+	
+
+	public FingerPreview(Context context, Handler mhandler) {
+		fingerJNI = new FingerJNI();
+		this.mContext = context;
+		this.mhandler = mhandler;
+		outoftime_count = 0;
+		if (checkusbdevice()) {
+			mhandler.sendEmptyMessage(3);
+		} else {
+			mhandler.sendEmptyMessage(-3);
+		}
+
+	}
+
+	private boolean checkusbdevice() {
+		Log.e("checkusbdevice", "checkusbdevice  in ");
+		UsbManager usbManager = (UsbManager) mContext.getSystemService(Context.USB_SERVICE);
+		HashMap<String, UsbDevice> devlist = usbManager.getDeviceList();
+		Iterator<UsbDevice> devs = devlist.values().iterator();
+		while (devs.hasNext()) {
+			UsbDevice d = devs.next();
+			Log.e("checkusbdevice", "d.getProductId() = " + String.format("%04X", d.getProductId()));
+			Log.e("checkusbdevice", "d.getVendorId() = " + String.format("%04X", d.getVendorId()));
+			if ((d.getProductId() == current_PID) || (0x735f == d.getVendorId())) {
+				Log.e("checkusbdevice", "found TCO310 device");
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public int Init() {
+		int ret = fingerJNI.TCFP_Init(1, 1, "/storage/emulated/legacy");
+		if (ret == -100) {
+			mhandler.sendEmptyMessage(-100);
+		}
+//		FingerprintPowerManager.SetFingerPower(0);
+//		FingerprintPowerManager.SetFingerPower(1);
+		if (ret >= 0) {
+			mhandler.sendEmptyMessage(3);
+			isInit = true;
+		} else {
+			mhandler.sendEmptyMessage(-3);
+			isInit = false;
+		}
+		return ret;
+	}
+	
+	public int UnInit() {
+		isInit = false;
+		return fingerJNI.TCFP_UnInit();
+	}
+
+	public int StartCompareFeatureThread(final byte[] sample) {
+		if(!isInit) {
+			return -1;
+		}
+		isworking = true;
+		ignorelatestimage = 0;
+		outoftime_count = 0;
+		grey_bmp_buffer = new byte[256 * 360 + 1024 + 54];
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+
+				while (isworking) {
+					fingerJNI.TCFP_ImageExtract(grey_bmp_buffer, grey_bmpdata_buffer);
+					int[]imageAttr = new int[]{256, 360, 500};
+					int QScore = fingerJNI.TCFP_GetQualityScore(grey_bmpdata_buffer, grey_bmpdata_buffer.length, imageAttr);
+					Log.e("TC", "Finger Score = "+String.valueOf(QScore));
+					nfiqValue = QScore;
+					if(QScore >= FPConfig.getQualitythreshold()){
+						int res = fingerJNI.TCFP_FeatureExtract(feature, grey_bmpdata_buffer, grey_bmpdata_buffer.length, imageAttr);
+						if (ignorelatestimage <= 0) {
+							ignorelatestimage++;
+							continue;
+						}
+						score = fingerJNI.TCFP_FeatureMatch(feature, feature.length, sample, sample.length);
+						if (score > FPConfig.getCompareScorethreshold()) {
+							mhandler.sendEmptyMessage(2);
+						} else {
+							mhandler.sendEmptyMessage(-2);
+						}
+						isworking = false;
+						break;
+					} else {
+						isworking = false;
+						mhandler.sendEmptyMessage(-13);
+					}
+				}
+			}
+		}).start();
+		return 0;
+	}
+}

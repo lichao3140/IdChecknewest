@@ -1,0 +1,79 @@
+#include "jni.h"
+
+#ifndef _PWM_H_
+
+#define _PWM_H_
+#include <sys/ioctl.h>
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+#define TELPO_IOF_MAGIC 't'
+#define DEVICE_POWER 'p'
+#define OTGPOWR 'T'
+
+#define TELPO_IOCTL_USB_FINGER_POWON	_IOW(TELPO_IOF_MAGIC, 0x00, int)
+#define TELPO_IOCTL_USB_FINGER_POWOFF   _IOW(TELPO_IOF_MAGIC, 0x01, int)
+
+#define TELPO_IOCTL_USB_PRINTER_POWON   _IOW(TELPO_IOF_MAGIC, 0x02, int)
+#define TELPO_IOCTL_USB_PRINTER_POWOFF  _IOW(TELPO_IOF_MAGIC, 0x03, int)
+
+#define TELPO_IOCTL_RFID_POWON			_IOW(TELPO_IOF_MAGIC, 0x04, int)
+#define TELPO_IOCTL_RFID_POWOFF			_IOW(TELPO_IOF_MAGIC, 0x05, int)
+
+#define TELPO_IOCTL_MONEY_BOX_POWON		_IOW(TELPO_IOF_MAGIC, 0x06, int)
+#define TELPO_IOCTL_MONEY_BOX_POWOFF	_IOW(TELPO_IOF_MAGIC, 0x07, int)
+
+#define TELPO_IOCTL_PSAM_CARD_SELON 	_IOW(TELPO_IOF_MAGIC, 0x08, int)
+#define TELPO_IOCTL_PSAM_CARD_SELOFF 	_IOW(TELPO_IOF_MAGIC, 0x09, int)
+
+#define TELPO_IOCTL_ID_CARD_POWON       _IOW(TELPO_IOF_MAGIC, 0x0C, int)
+#define TELPO_IOCTL_ID_CARD_POWOFF      _IOW(TELPO_IOF_MAGIC, 0x0D, int)
+
+#define TELPO_IOCTL_IC_CARD_SELON    	_IOW(TELPO_IOF_MAGIC, 0x00, int)
+#define TELPO_IOCTL_IC_CARD_SELOFF      _IOW(TELPO_IOF_MAGIC, 0x01, int)
+
+#define TELPO_IOCTL_QR_CODE_SELON       _IOW(TELPO_IOF_MAGIC, 0x04, int)
+#define TELPO_IOCTL_QR_CODE_SELOFF      _IOW(TELPO_IOF_MAGIC, 0x05, int)
+
+#define TELPO_IOCTL_MSR_CARD_SELON    	_IOW(TELPO_IOF_MAGIC, 0x0A, int)
+#define TELPO_IOCTL_MSR_CARD_SELOFF     _IOW(TELPO_IOF_MAGIC, 0x0B, int)
+
+#define PRT_POWER_ON                    _IO(DEVICE_POWER,2)
+#define PRT_POWER_OFF                   _IO(DEVICE_POWER,3)
+
+#define RFID_ENABLE     1
+#define RFID_DISABLE    0
+
+#define PSAM2_ENABLE    2
+#define PSAM3_ENABLE    3
+
+#define MONEY_BOX_ENABLE  1
+#define MONEY_BOX_DISABLE 0
+
+#define PRINTER_ENABLE    1
+#define PRINTER_DISABLE   0
+
+#define IDCARD_ENABLE     1
+#define IDCARD_DISABLE    0
+
+#define OTG_IC_CARD_SELON               _IO(OTGPOWR,3)
+#define OTG_IC_CARD_SELOFF              _IO(OTGPOWR,4)
+
+#define OTG_PSAM_CARD_SELON             _IO(OTGPOWR,5)
+#define OTG_PSAM_CARD_SELOFF            _IO(OTGPOWR,6)
+
+int rfid_power(int arg);
+int psam_switch(int arg);
+int psam_power(int arg);
+int money_box_power(int arg);
+int printer_power(int arg);
+int idcard_power(int arg);
+int iccard_power(int arg);
+int laser_power(int arg);
+int msr_power(int arg);
+
+#ifdef _cplusplus
+}
+#endif
+#endif

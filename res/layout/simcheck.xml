@@ -1,0 +1,126 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E8E8E8" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <include
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            layout="@layout/toolbar" />
+       
+        <TextView
+            android:id="@+id/hint_view"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/x70"
+            android:background="#fff"
+            android:textColor="#000"
+            android:maxLines="2"
+            android:layout_margin="@dimen/x10"
+            android:paddingLeft="@dimen/x15"
+            android:paddingRight="@dimen/x15"
+            android:paddingTop="@dimen/x10"
+            android:paddingBottom="@dimen/x10"
+            android:textSize="@dimen/x20" />
+
+        <TextView
+            android:id="@+id/test_info_view"
+            android:padding="@dimen/x20"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/x20"
+            android:textColor="#333" />
+        
+        <LinearLayout
+            android:id="@+id/relativeLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:orientation="vertical"
+            android:layout_marginTop="5dp">
+           
+            <TextView
+                android:id="@+id/showData"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="19dp"
+                android:layout_marginTop="32dp"
+                android:textColor="#000000"
+            	android:textSize="@dimen/x13"
+            	android:visibility="gone"/>     
+             <Button
+                android:id="@+id/open_getatr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/idcard_sd" 
+                android:layout_marginTop="100dp"
+                android:layout_gravity ="center"
+                android:visibility="gone"/>            
+             <Button
+                android:id="@+id/open_getef"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/idcard_jriccid"
+                android:layout_gravity ="center" 
+                android:layout_below="@+id/open_getatr"             
+                android:visibility="gone"/>
+             <Button
+                android:id="@+id/open_getid"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/idcard_hqiccid" 
+                android:layout_below="@+id/open_getef" 
+                android:layout_gravity ="center"           
+                android:visibility="gone"/>
+             <Button
+                android:id="@+id/open_poweroff"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/idcard_xd" 
+                android:layout_below="@+id/open_getid"
+                android:layout_gravity ="center"
+                android:visibility="gone"/>
+             <Button
+                android:id="@+id/open_clear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/idcard_qcsj" 
+                android:layout_below="@+id/open_poweroff"
+                android:layout_gravity ="center"
+                android:visibility="gone"/>
+
+		</LinearLayout>
+
+        <TextView
+            android:id="@+id/default_view"
+            android:layout_marginTop="@dimen/x100"
+            android:padding="@dimen/x20"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/x100"
+            android:textSize="@dimen/x20"
+            android:textColor="#333"
+            android:gravity="center_horizontal|center_vertical"
+            android:text="@string/idcard_qhqqx" />
+        
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/open_qhqqx"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/idcard_hqusbqx" />
+
+        </LinearLayout>
+    </LinearLayout>
+    
+</ScrollView>

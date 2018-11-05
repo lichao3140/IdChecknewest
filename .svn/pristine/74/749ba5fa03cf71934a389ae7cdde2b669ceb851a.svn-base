@@ -1,0 +1,329 @@
+package com.telpo.idcheck;
+
+import com.techshino.fingerprint.FPConfig;
+import com.telpo.finger.FingerPreview;
+import com.telpo.finger.FingerprintPowerManager;
+import com.telpo.finger.Utils;
+import com.telpo.typeAcheck.SerialTACardActivity;
+import com.telpo.typeAcheck.UsbTACardActivity;
+
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.hardware.usb.UsbManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import com.telpo.doublecard.DoubleCard;
+import com.telpo.tps550.api.TelpoException;
+import com.telpo.tps550.api.demo.util.ShellUtils;
+import com.telpo.tps550.api.idcard.IdCard;
+
+
+public class MainActivity extends Activity {
+	
+//	private FingerPreview fingercamera;
+	private Button idserial_mode, idusb_mode, tusb_mode, tserial_mode, serialmain_mode, usbmain_mode;
+	private TextView hint_view;
+	private Boolean serialmode = false; 
+	private Boolean usbmode = false;
+	private Boolean inWindow = true;
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		 	
+		new Thread(new Runnable() {
+            
+            @Override
+            public void run() {
+                try {
+                    DoubleCard.open(MainActivity.this);
+                } catch (TelpoException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start(); 
+		
+		setContentView(R.layout.activity_main);
+		
+		hint_view = (TextView) findViewById(R.id.select_mode);
+		serialmain_mode = (Button) findViewById(R.id.serial_mode);
+		usbmain_mode = (Button) findViewById(R.id.usb_mode);
+		idserial_mode = (Button) findViewById(R.id.idserial_mode);
+		idusb_mode = (Button) findViewById(R.id.idusb_mode);
+		tusb_mode = (Button) findViewById(R.id.tusb_mode);
+		tserial_mode = (Button) findViewById(R.id.tserial_mode);
+		serialmain_mode.setVisibility(View.VISIBLE);
+		usbmain_mode.setVisibility(View.VISIBLE);
+		serialmode = false;
+		usbmode = false;
+		
+		serialmain_mode.setOnClickListener(new OnClickListener() {
+			@Override
+			
+			public void onClick(View v) {
+				
+				serialmode = true;
+				inWindow = false;
+				openserial();
+			}
+		});
+		
+		usbmain_mode.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				usbmode = true;
+				inWindow = false;
+				openusb();
+			}
+		});
+		
+		idserial_mode.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				
+				Intent intent = new Intent(MainActivity.this, SerialIdCardActivity.class);
+				startActivity(intent);
+			}
+		});
+		idusb_mode.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				Intent intent = new Intent(MainActivity.this, UsbIdCardActivity.class);
+				startActivity(intent);
+			}
+		});
+		tusb_mode.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				
+				Intent intent = new Intent(MainActivity.this, UsbTACardActivity.class);
+				startActivity(intent);
+			}
+			
+		});
+		
+		tserial_mode.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				
+				try {
+					DoubleCard.open(MainActivity.this);
+				} catch (TelpoException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				Intent intent = new Intent(MainActivity.this, SerialTACardActivity.class);
+				startActivity(intent);
+			}
+			
+		});
+		
+		//Algorithm Config for STQC
+		FPConfig.setFeatureType(FPConfig.FEATURE_TYPE_BASE64);
+		FPConfig.setFingerCode(FPConfig.UNKNOWN);
+		FPConfig.setQualitythreshold(60);
+		FPConfig.setCompareScorethreshold(60);
+		//root for chmod video 0~15
+	    new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				String path = "/dev/video";
+				for (int i = 0; i < 15; i++) {
+					Utils.upgradeRootPermission(path + i);
+				}
+			}
+		});
+	} 
+	
+	public void onStart(Bundle savedInstanceState) {
+		super.onStart();
+		if(serialmode) {
+			openserial();
+		}else if (usbmode) {
+			openusb();
+		}
+	}
+	
+
+	public void onStop(Bundle savedInstanceState) {
+		
+		super.onStop();
+
+	}
+		
+	@Override
+	public void onBackPressed() {
+		// TODO Auto-generated method stub
+		if (serialmode || usbmode) {			
+			Intent intent = new Intent(MainActivity.this, MainActivity.class);
+			startActivity(intent);
+		}else if (inWindow) {
+			
+		}else {
+			super.onBackPressed();
+		}		
+	}	
+	
+	public void openserial() {
+		
+		hint_view.setText(getString(R.string.card_select));
+		serialmain_mode.setVisibility(View.INVISIBLE);
+		usbmain_mode.setVisibility(View.INVISIBLE);
+		idserial_mode.setVisibility(View.VISIBLE);
+		tserial_mode.setVisibility(View.VISIBLE);
+	}
+	
+	public void openusb() {
+		
+		hint_view.setText(getString(R.string.card_select));
+		serialmain_mode.setVisibility(View.INVISIBLE);
+		usbmain_mode.setVisibility(View.INVISIBLE);
+		idusb_mode.setVisibility(View.VISIBLE);
+		tusb_mode.setVisibility(View.VISIBLE);
+	}
+	
+	
+	
+	
+
+//	@Override
+//	protected void onResume() {
+//		// TODO Auto-generated method stub
+//		super.onResume();
+//		fingercamera = new FingerPreview(this, myHanlder);
+//		new Thread(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				fingercamera.Init();
+//
+//			}
+//		}).start();
+//		detectUsbDeviceAttach();
+//	}
+//
+//	@Override
+//	protected void onPause() {
+//		super.onPause();
+//		fingercamera.isworking = false;
+//
+//		new Thread(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				fingercamera.fingerJNI.TCFP_UnInit();
+//				FingerprintPowerManager.SetFingerPower(0);
+//			}
+//		}).start();
+//
+//	}
+//
+//	@Override
+//	protected void onDestroy() {
+//		super.onDestroy();
+//		unregisterReceiver(mUsbReceiver);
+//		FingerprintPowerManager.SetFingerPower(0);
+//	}
+
+ 
+//	private void detectUsbDeviceAttach() {
+//		// listen usb device attach
+//		IntentFilter usbDeviceStateFilter = new IntentFilter();
+//
+//		usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+//		usbDeviceStateFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+//		usbDeviceStateFilter
+//				.addAction(UsbManager.ACTION_USB_ACCESSORY_ATTACHED);
+//		usbDeviceStateFilter
+//				.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
+//
+//		registerReceiver(mUsbReceiver, usbDeviceStateFilter);
+//
+//	}
+//
+//	BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+//		@Override
+//		public void onReceive(Context context, Intent intent) {
+//
+//			String curItentActionName = intent.getAction();
+//
+//			if (UsbManager.ACTION_USB_DEVICE_ATTACHED
+//					.equals(curItentActionName)) {
+//				String path = "/dev/video";
+//				for (int i = 0; i < 15; i++) {
+//					Utils.upgradeRootPermission(path + i);
+//				}
+//				new Thread(new Runnable() {
+//					@Override
+//					public void run() {
+//						fingercamera.Init();
+//					}
+//				}).start();
+//				//connectsuccess
+//				fingercamera.isworking = false;
+//
+//			} else if (UsbManager.ACTION_USB_DEVICE_DETACHED
+//					.equals(curItentActionName)) {
+//				fingercamera.fingerJNI.TCFP_UnInit();
+//				fingercamera.isworking = false;
+//				//Devicedisconnected
+//				fingercamera.isworking = false;
+//			}
+//		}
+//
+//	};
+//
+//	public Handler myHanlder = new Handler() {
+//		@Override
+//		public void handleMessage(Message msg) {
+//			switch (msg.what) {
+//			case 2:
+//				//Matchingsucceeded+ fingercamera.score
+//				break;
+//			case -2:
+//				//Matchingfailed
+//				break;
+//			case 3:
+//				//founduvcdevice
+//				break;
+//			case -3:
+//				//notfounduvcdevice
+//				break;
+//			case -13:
+//				//outoftime
+//				break;
+//
+//			}
+//
+//		}
+//	};
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		DoubleCard.close();
+//		ShellUtils.execCommand("echo 4 > /sys/class/telpoio/power_status", false);
+	}
+}
+

@@ -1,0 +1,22 @@
+#include <jni.h>
+#include <string.h>
+#include "com_telpo_doublecard_DoubleCard.h"
+#include "telpoutil.h"
+
+JNIEXPORT jboolean JNICALL Java_com_telpo_doublecard_DoubleCard_connect_1card
+  (JNIEnv *env, jclass clazz, jint type, jint baut)
+{
+	idcard_power(1);
+}
+
+
+JNIEXPORT jboolean JNICALL Java_com_telpo_doublecard_DoubleCard_disconnect_1card
+  (JNIEnv *env, jclass clazz)
+{
+	idcard_power(0);
+}
+
+
+
+
+

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <Button
+        android:id="@+id/login"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="登录"/>
+    <Button
+        android:id="@+id/logout"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="退出"/>
+    <Button
+        android:id="@+id/get_mission"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="获取任务单/销售单的物料"/>
+    <Button
+        android:id="@+id/get_input"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="投入"/>
+    <Button
+        android:id="@+id/get_good_brfore_aging"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="老化前良品"/>
+    <Button
+        android:id="@+id/get_bad_brfore_aging"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="老化前不良品"/>
+    <Button
+        android:id="@+id/get_good_after_aging"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="老化后良品"/>
+    <Button
+        android:id="@+id/get_bad_after_aging"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="老化后不良品"/>
+    <Button
+        android:id="@+id/get_stock_out"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:text="出库"/>
+    <TextView
+        android:id="@+id/json_info"
+        android:layout_width="wrap_content"
+    	android:layout_height="wrap_content"
+    	android:textSize="18sp"/>
+</LinearLayout>

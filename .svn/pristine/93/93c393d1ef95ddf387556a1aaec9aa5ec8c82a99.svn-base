@@ -1,0 +1,679 @@
+package com.telpo.typeAcheck;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.lang.*;
+
+import com.google.zxing.other.BeepManager;
+import com.telpo.idcheck.R;
+import com.telpo.idcheck.ShellUtils;
+import com.telpo.tps550.api.idcard.IdCard;
+import com.telpo.typeAcheck.TAInfo;
+import com.zkteco.android.IDReader.IDPhotoHelper;
+import com.zkteco.android.IDReader.WLTService;
+import com.telpo.tps550.api.TelpoException;
+
+import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbEndpoint;
+import android.hardware.usb.UsbInterface;
+import android.hardware.usb.UsbManager;
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.TransactionTooLargeException;
+import android.util.Log;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.animation.TranslateAnimation;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+public class SerialTACardActivity extends SerialPortActivity{
+
+	private static final byte[] TSAM_HEADER = new byte[]{(byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0x96, 0x69 };
+	private byte[] Password, tbuffer = new byte[20];
+	private byte[] Newwritedata;
+	private byte[] compensate = new byte[] {};
+	private int tsize, tn, begin = 0;
+	private Button tgetpermission, pwConfirm, writeData,writeDataConfirm;
+	private TextView tahint, tcardInfo, thint_view, tdef_view, ttest_info_view;
+	private EditText pwCheck, dataWrite;
+	private TAInfo tinfo;
+	private TASectorInfo tsectorinfo;
+	private SoundPool tsoundPool;
+	private View tinfo_view;
+	private PendingIntent tPermissionIntent;//related to usb
+	private static final String TACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
+	private UsbManager tUsbManager;
+	private GetTAInfoTask tAsyncTask;
+	private PwCheckTask checkAsyncTask;
+	private WriteDataTask dataAsyncTask;
+	private ReadDataTask readAsynctTask;
+	private boolean isCardPressing = true;
+	private boolean isUsingtUsb = false;
+	private boolean hastReader = true;
+	private boolean istFinish = false;
+	private Boolean writeright = false;
+	private Handler handler3 = new Handler() {
+		
+		@Override
+		public void handleMessage(Message msg) {
+		    if (istFinish) {
+			    return;
+		    }
+		    switch (msg.what) {
+		    case 1:
+		        tAsyncTask = new GetTAInfoTask();
+		        tAsyncTask.execute();		        
+			    break;
+		    case 2:
+		    	checkAsyncTask = new PwCheckTask();
+			    checkAsyncTask.execute();
+			    break;
+		    case 3:
+		    	readAsynctTask = new ReadDataTask();
+		    	readAsynctTask.execute();
+		    	break;
+		    case 4:
+		    	dataAsyncTask = new WriteDataTask();
+		    	dataAsyncTask.execute();
+		    	break;
+			}
+		    super.handleMessage(msg);
+		}
+	};
+	
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		getWindow().setFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		setContentView(R.layout.idcard_usb);
+		pwCheck = (EditText) findViewById(R.id.edittext1);
+		pwConfirm = (Button) findViewById(R.id.passwordconfirm);
+		writeData = (Button) findViewById(R.id.writedata);
+		dataWrite = (EditText) findViewById(R.id.edittext2);		
+		tahint = (TextView) findViewById(R.id.tAhint);
+		tcardInfo = (TextView) findViewById(R.id.showData);
+		tinfo_view = findViewById(R.id.relativeLayout);
+		thint_view = (TextView) findViewById(R.id.hint_view);
+		tdef_view = (TextView) findViewById(R.id.default_view);
+		ttest_info_view = (TextView) findViewById(R.id.test_info_view);
+		writeDataConfirm = (Button) findViewById(R.id.writedataconfirm);
+		thint_view.setText(getString(R.string.idcard_qfk));
+		tgetpermission = (Button)findViewById(R.id.requestPermission);
+		tgetpermission.setVisibility(View.GONE);
+		tahint.setVisibility(View.VISIBLE);
+		Log.e("OnCreate","aaa");
+		pwConfirm.setOnClickListener(new View.OnClickListener(){
+			
+			@Override
+			public void onClick(View v) {
+				openLockCheck();
+			}
+			
+		});
+		
+		writeData.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				openWriteData();
+			}
+		});
+		
+		writeDataConfirm.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				confirmData();
+			}
+		});				
+	}
+	
+	protected void onDestroy(){
+		super.onDestroy();
+	//***	can delete	origin: unregisterReceiver(tReceiver);
+		while(isUsingtUsb);
+	}
+
+	protected void onStart(){
+		super.onStart();
+		
+		thint_view.setText(getString(R.string.idcard_qfk));
+		tdef_view.setVisibility(View.GONE);
+		pwConfirm.setVisibility(View.GONE);
+		pwCheck.setVisibility(View.GONE);
+		dataWrite.setVisibility(View.GONE);
+		tcardInfo.setVisibility(View.GONE);
+		writeData.setVisibility(View.GONE);		
+		writeDataConfirm.setVisibility(View.GONE);
+		istFinish = false;
+	}
+
+	protected void onStop(){
+		super.onStop();
+		if(handler3.hasMessages(1)) {
+			handler3.removeMessages(1);
+		}	
+		if(handler3.hasMessages(2)) {
+			handler3.removeMessages(2);
+		}
+		if(handler3.hasMessages(3)) {
+			handler3.removeMessages(3);
+		}
+		if(handler3.hasMessages(4)) {
+			handler3.removeMessages(4);
+		}
+		pwCheck.setText("");
+		dataWrite.setText("");
+		istFinish = true;
+	}
+
+	protected void onResume() {
+		super.onResume();
+		thint_view.setText(getString(R.string.idcard_qfk));
+		//may be wait for add;
+		if(isCardPressing == true) {
+			handler3.sendMessageDelayed(handler3.obtainMessage(1, ""), 0);
+		}
+		
+	}
+	
+	public void onBackPressed(){
+		super.onBackPressed();
+		if(handler3.hasMessages(1)) {
+			handler3.removeMessages(1);
+		}	
+		if(handler3.hasMessages(2)) {
+			handler3.removeMessages(2);
+		}
+		if(handler3.hasMessages(3)) {
+			handler3.removeMessages(3);
+		}
+		if(handler3.hasMessages(4)) {
+			handler3.removeMessages(4);
+		}
+		istFinish = true;
+	}
+
+	public void openLockCheck() {
+		
+		String password = new String(pwCheck.getText().toString());
+		Password = hexStringToBytes(password);
+		if (pwCheck.getText() != null ) {
+			handler3.sendMessageDelayed(handler3.obtainMessage(2,""), 0);
+		}else if ( pwCheck.getText() == null) {
+			thint_view.setText(getString(R.string.tacard_mybnwk));
+		}
+	}	
+	
+	public void openWriteData() {
+		
+		if ( hastReader ) {
+			thint_view.setText(getString(R.string.tacard_qxrsj));
+		    tcardInfo.setVisibility(View.VISIBLE);
+		    pwConfirm.setVisibility(View.INVISIBLE);
+		    pwCheck.setVisibility(View.INVISIBLE);
+		    writeData.setVisibility(View.INVISIBLE);
+		    dataWrite.setVisibility(View.VISIBLE);
+		    writeDataConfirm.setVisibility(View.VISIBLE);
+		}		
+	}
+	
+    public void confirmData() {
+		
+		String newwritedata = new String(dataWrite.getText().toString());
+		Newwritedata = hexStringToBytes(newwritedata);
+		tbuffer = new byte[20];
+		begin = 0;
+		if ( hastReader ) {
+			handler3.sendMessageDelayed(handler3.obtainMessage(4,""), 0);
+		}else if (!hastReader){
+			thint_view.setText(getString(R.string.idcard_wfljdkq));
+		}
+	}
+	
+    
+	private class GetTAInfoTask extends AsyncTask<Void, Integer, Boolean>{
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			tinfo = null;
+		}
+			
+		@Override
+		protected Boolean doInBackground(Void... arg0){
+			
+			checkTACard();
+			try{
+				Thread.sleep(3000);
+			} catch (InterruptedException a) {
+				a.printStackTrace();
+			}
+			requestTACard();
+			Log.e("requestTACard", "success");
+			if (tinfo != null){
+				return true;				
+			}
+			return false;
+		}
+			
+		@Override
+		protected void onPostExecute(Boolean result){
+			super.onPostExecute(result);
+			if (result) {
+				tahint.setVisibility(View.INVISIBLE);
+				tcardInfo.setText(getString(R.string.idcard_kh) + tinfo.getNum());
+				tcardInfo.setVisibility(View.VISIBLE);
+				showtInfoView();
+				thint_view.setText(getString(R.string.tacard_myrz));
+				pwCheck.setVisibility(View.VISIBLE);
+				pwConfirm.setVisibility(View.VISIBLE);
+				tbuffer = new byte[20];
+				begin = 0;
+			}else {
+				tbuffer = new byte[20];
+				begin = 0;
+				handler3.sendMessageDelayed(handler3.obtainMessage(1, ""),  500);
+			}			
+		}
+	}		
+	
+	
+	private class PwCheckTask extends AsyncTask<Void, Integer, Boolean>{
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();			
+		}
+		
+		@Override
+		protected Boolean doInBackground(Void...  arg1) {
+			
+			Boolean pwright = new Boolean(false);						
+			checkPW();
+			try{
+				Thread.sleep(3000);
+			} catch (InterruptedException a) {
+				a.printStackTrace();
+			}
+			pwright = requestpw();			
+			return pwright;			
+		}
+		
+		@Override 
+		protected void onPostExecute(Boolean result) {
+			super.onPostExecute(result);
+			if (result == true) {
+				tahint.setVisibility(View.INVISIBLE);
+				thint_view.setText(getString(R.string.tacard_zzdqknsj));
+				tcardInfo.setVisibility(View.VISIBLE);
+				pwConfirm.setVisibility(View.VISIBLE);
+				pwCheck.setVisibility(View.VISIBLE);
+				tbuffer = new byte[40];
+				begin = 0;
+				Log.e("PwCheckTask","true");
+				handler3.sendMessageDelayed(handler3.obtainMessage(3, ""), 500);
+			}else if (result == false){
+				tbuffer = new byte[20];
+				begin = 0;
+				thint_view.setText(getString(R.string.tacard_mycw));				
+			}			
+		}
+	}
+	
+	
+	private class ReadDataTask extends AsyncTask<Void, Integer, Boolean> {
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();			
+		}
+		
+		@Override
+		protected Boolean doInBackground(Void...  arg4) {
+			
+			tbuffer = new byte[40];
+			begin = 0;
+			readData();
+			try{
+				Thread.sleep(2000);
+			} catch (InterruptedException a) {
+				a.printStackTrace();
+			}
+			requestData();
+			if (tsectorinfo != null) {
+				return true;
+			}else return false;
+		}
+			
+		@Override
+		protected void onPostExecute(Boolean result) {
+			
+			if (result) {
+				tcardInfo.setText(getString(R.string.idcard_kh) + tinfo.getNum() + "\n\n"
+						+ getString(R.string.tacard_knsj) + tsectorinfo.getSectorData());
+				tcardInfo.setVisibility(View.VISIBLE);
+				writeData.setVisibility(View.VISIBLE);	
+				thint_view.setText(getString(R.string.tacard_knsjydq));
+				pwConfirm.setVisibility(View.INVISIBLE);
+				pwCheck.setVisibility(View.INVISIBLE);
+				tbuffer = new byte[20];
+				begin = 0;
+			}else {
+				Log.e("readdatafail", "readdatafail");
+				handler3.sendMessageDelayed(handler3.obtainMessage(3, ""), 100);
+			}
+		}
+	}	
+		
+	
+	private class WriteDataTask extends AsyncTask<Void, Integer, Boolean> {
+		
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();			
+		}
+		
+		@Override
+		protected Boolean doInBackground(Void...  arg2) {
+			
+			Boolean writeinsuccess = false;
+			writeInData();
+			try{
+				Thread.sleep(2000);
+			} catch (InterruptedException a) {
+				a.printStackTrace();
+			}
+			if (writeright = true) {
+				writeinsuccess = requestwrite();
+			}
+			return writeinsuccess;
+		}
+		
+		@Override
+		protected void onPostExecute(Boolean result) {
+			super.onPostExecute(result);
+			if (result == true) {
+				thint_view.setText(getString(R.string.tacard_xrsjcg));
+				tbuffer = new byte[20];
+				begin = 0;
+			}else if (result == false) {
+				if( Newwritedata == null ) {
+					openWriteData();
+					thint_view.setText(getString(R.string.tacard_xrsjbnwk));
+					tcardInfo.setText(getString(R.string.idcard_kh) + tinfo.getNum() + "\n\n"
+							+ getString(R.string.tacard_knsj) + tsectorinfo.getSectorData());
+					tbuffer = new byte[20];
+					begin = 0;
+				}else {
+					openWriteData();
+					thint_view.setText(getString(R.string.tacard_xrsjsb));
+					tbuffer = new byte[20];
+					begin = 0;
+				}				
+			}			
+		}
+	}
+
+	
+	@Override
+	protected void onDataReceived(final byte[] buffer, final int size, final int n) {
+		// TODO Auto-generated method stub
+		
+		runOnUiThread(new Runnable() {
+			public void run() {				
+				
+				Log.e("bufferlength	",""+size);
+				for(int q = 0; q<size; q++) {
+					Log.e("buffer",""+buffer[q]);
+				}
+				
+				for(int i = 0; i < size; i++) {
+					tbuffer[begin + i] = buffer[i];
+				}
+				begin = begin + size;
+				for(int q = 0; q<tbuffer.length; q++) {
+					Log.e("Onbuffer",""+tbuffer[q]);
+				}
+			}				
+		});
+	}
+	
+	private void checkTACard(){
+		byte[] cmd_read_uid = new byte[]{(byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0x96, 0x69, 0x00, 0x04, (byte) 0x80, 0x05, 0x10,(byte) 0x91};
+		for (int i = 0; i < cmd_read_uid.length; i++) {			
+			try {
+				mOutputStream.write(cmd_read_uid[i]);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}		
+		}		
+	}
+	
+	private void requestTACard() {
+		
+		final byte[] sw = new byte[]{ 0x05, 0x00, (byte) 0x90 };
+		tinfo = null;
+		boolean isReadCard = true;
+
+		for (int s = 0; s < TSAM_HEADER.length; s++) {
+			if (tbuffer[s] != TSAM_HEADER[s]) {
+				isReadCard = false;	
+			}				
+		}
+		for (int k = 0; k < sw.length; k++) {					
+			if (tbuffer[k + TSAM_HEADER.length + 2] != sw[k]){
+				isReadCard = false;
+			}
+		}
+		while(isReadCard != false) {
+		    byte[]uid2 = Arrays.copyOfRange(tbuffer, TSAM_HEADER.length+5, TSAM_HEADER.length+9);
+			String newuid2 = new String(); 
+			newuid2	= decodetcarduid(uid2);			
+			Log.e("newuid2",""+newuid2);			
+			tinfo = new TAInfo();
+			tinfo.setNum(newuid2);
+			Log.e("isreadcard","success");
+			break;				
+		}						
+	}
+	
+	
+	
+	private void checkPW() {
+		byte[] cmd_pwcheck = new byte[17];
+		System.arraycopy(new byte[]{(byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0x96, 0x69, 0x00, 0x10, (byte) 0x80, 0x0B, 0x01}, 0, cmd_pwcheck, 0, 10);
+		for ( int i = 0; i < Password.length; i++) {
+			cmd_pwcheck[10+i] = Password[i];	
+	    }
+	    int check_sum = cmd_pwcheck.length-1;
+	    cmd_pwcheck[check_sum] = (byte) 0x9A;
+		for (int i = 0; i < cmd_pwcheck.length; i++) {			
+			try {
+				mOutputStream.write(cmd_pwcheck[i]);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		Log.e("checkPW","success");
+	}
+	
+	private Boolean requestpw() {
+		final byte[] sw = new byte[]{ 0x0B, 0x00, (byte) 0x90 };
+		for (int s = 0; s < TSAM_HEADER.length; s++) {
+			if (tbuffer[s] != TSAM_HEADER[s]) {
+				return false;	
+			}				
+		}
+		for (int k = 0; k < sw.length; k++) {					
+			if (tbuffer[k + TSAM_HEADER.length + 2] != sw[k]){
+				return false;
+			}
+		}
+		return true;
+	}
+	    	   
+
+	private void readData() {
+		
+		byte[] cmd_read_data = new byte[]{(byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0x96, 0x69, 0x00, 0x06, (byte) 0x80, 0x0D, 0x01, 0x01,
+				0x10, (byte) 0x9B};
+		for (int i = 0; i < cmd_read_data.length; i++) {			
+			try {
+				mOutputStream.write(cmd_read_data[i]);
+				Log.e("readData", "success");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}			
+	}
+	
+	
+	private void requestData(){
+				
+		final byte[] sw = new byte[]{ 0x0D, 0x00, (byte) 0x90 };
+		Boolean requestsuccess = true;
+		for (int s = 0; s < TSAM_HEADER.length; s++) {
+			if (tbuffer[s] != TSAM_HEADER[s]) {
+				tsectorinfo = null;	
+				requestsuccess = false;
+			}				
+		}
+		for (int k = 0; k < sw.length; k++) {					
+			if (tbuffer[k + TSAM_HEADER.length + 2] != sw[k]){
+				tsectorinfo = null;
+				requestsuccess = false;
+			}
+		}
+		if(requestsuccess == true) {
+			byte[] data = new byte[] {};
+			data = Arrays.copyOfRange(tbuffer, TSAM_HEADER.length+5, TSAM_HEADER.length+21);		
+			String newdata = new String();		 
+			newdata = decodetcarduid(data);
+			Log.e("requestData",""+newdata);
+			tsectorinfo = new TASectorInfo();
+			tsectorinfo.setSectorData(newdata);
+		}
+	}
+	
+	
+	private void writeInData() {
+		
+		byte[] cmd_write_data = new byte[29];
+		System.arraycopy(new byte[]{(byte) 0xAA, (byte) 0xAA, (byte) 0xAA, (byte) 0x96, 0x69, 0x00, 0x16, (byte) 0x80, 0x0E, 0x01, 0x01, 0x10}, 0, cmd_write_data, 0, 12);
+		
+		if( Newwritedata == null ) {			
+			writeright = false;
+		}else if ( Newwritedata != null ) {
+			for ( int i = 0; i < Newwritedata.length; i++) {
+				cmd_write_data[12+i] = Newwritedata[i];				
+				}
+			if (Newwritedata.length < 16) {
+				int repairzero = 16 - Newwritedata.length;
+				for (int d = 0; d < repairzero; d++) {
+					cmd_write_data[12+Newwritedata.length+d] = 0;
+				}
+			}
+			byte[] cmd_checksum = new byte[23]; 
+			System.arraycopy(new byte[] { 0x00, 0x16, (byte) 0x80, 0x0E, 0x01, 0x01, 0x10}, 0, cmd_checksum, 0, 7);
+			for ( int i = 0; i < Newwritedata.length; i++) {
+				cmd_checksum[7+i] = Newwritedata[i];				
+				}		
+			int check_sum = cmd_write_data.length-1;
+			cmd_write_data[check_sum] = crc(cmd_checksum);						
+			for (int l = 0; l < cmd_write_data.length; l++) {			
+				try {
+					mOutputStream.write(cmd_write_data[l]);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}	
+		}
+	}
+	
+	
+	private Boolean requestwrite() {
+		
+		final byte[] sw = new byte[]{ 0x0E, 0x00, (byte) 0x90 };
+		for (int s = 0; s < TSAM_HEADER.length; s++) {
+			if (tbuffer[s] != TSAM_HEADER[s]) {
+				return false;	
+			}				
+		}
+		for (int k = 0; k < sw.length; k++) {					
+			if (tbuffer[k + TSAM_HEADER.length + 2] != sw[k]){
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private static String decodetcarduid(byte[] uid) {
+		StringBuilder ret = new StringBuilder("");
+		for (int i = 0; i < uid.length; i++) {
+			int v = uid[i] & 0xff;
+			String hex = Integer.toHexString(v);
+		    if (hex.length() == 1) {
+		    	hex = '0' + hex;
+		    	}
+		    ret.append(hex);
+		    }
+		return ret.toString();
+		}
+	
+	public static byte[] hexStringToBytes(String hexString) {   
+	    if (hexString == null || hexString.equals("")) {   
+	        return null;   
+	    }   
+	    hexString = hexString.toUpperCase();   
+	    int length = hexString.length() / 2;   
+	    char[] hexChars = hexString.toCharArray();   
+	    byte[] d = new byte[length];   
+	    for (int i = 0; i < length; i++) {   
+	        int pos = i * 2;   
+	        d[i] = (byte) (charToByte(hexChars[pos]) << 4 | charToByte(hexChars[pos + 1]));   
+	    }   
+	    return d;   
+	}   
+	
+	private static byte charToByte(char c) {   
+	    return (byte) "0123456789ABCDEF".indexOf(c);   
+	}  	
+
+	private void showtInfoView() {
+		tinfo_view.setVisibility(View.VISIBLE);
+		tdef_view.setVisibility(View.GONE);
+		tdef_view.setText("");
+	}
+	
+	private byte crc(byte[] data){
+	    
+		int i; 
+	    byte crc=0x00;
+	    
+	    for(byte b:data) {
+	    	crc ^= b;  
+	    }
+	    return crc;
+	}
+}

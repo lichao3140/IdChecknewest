@@ -1,0 +1,121 @@
+package com.telpo.doublecard;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import com.telpo.idcheck.MainActivity;
+import com.telpo.tps550.api.DeviceNotFoundException;
+import com.telpo.tps550.api.TelpoException;
+import com.telpo.tps550.api.idcard.IdCardInitFailException;
+import com.telpo.typeAcheck.TAInfo;
+import com.telpo.tps550.api.util.StringUtil;
+import com.telpo.tps550.api.util.SystemUtil;
+
+import android.content.Context;
+import android.os.Environment;
+
+public class DoubleCard {
+
+	public static final int IDREADER_TYPE_UART = 0;
+	public static final int IDREADER_TYPE_USB  = 1;
+	private static final int DEFAULT_BARTRATE = 115200;
+	
+	public synchronized static void open(Context context) throws TelpoException {
+		
+		TAInfo.open(context);
+
+		File destDir = new File(Environment.getExternalStorageDirectory()
+				+ "/wltlib");
+		if (!destDir.exists()) {
+			if (!destDir.mkdir()) {
+				throw new IdCardInitFailException(
+						"Failed to find idcard library directory!");
+			}
+		}
+		
+		if (!isFileExists(Environment.getExternalStorageDirectory()
+				+ "/wltlib/base.dat")) {
+			if (!copyFile("/system/usr/base.dat",
+					Environment.getExternalStorageDirectory()
+							+ "/wltlib/base.dat")) {
+				throw new IdCardInitFailException(
+						"Failed to find idcard library data file!");
+			}
+		}
+
+		if (!isFileExists(Environment.getExternalStorageDirectory()
+				+ "/wltlib/license.lic")) {
+			if (!copyFile("/system/usr/license.lic",
+					Environment.getExternalStorageDirectory()
+							+ "/wltlib/license.lic")) {
+				throw new IdCardInitFailException(
+						"Failed to find idcard library license file!");
+			}
+		}
+
+//		if (IDCReaderSDK.wltInit(Environment.getExternalStorageDirectory()
+//				+ "/wltlib") != 0) {
+//			throw new IdCardInitFailException("Failed to init idcard library!");
+//		}
+		if (!connect_card(IDREADER_TYPE_UART,DEFAULT_BARTRATE)) {
+			throw new DeviceNotFoundException();
+		}
+	}
+
+	private static boolean isFileExists(String filePath) {
+		try {
+			File f = new File(filePath);
+			if (!f.exists()) {
+				return false;
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+	
+	private static boolean copyFile(String fileName, String path) {
+		boolean copyIsFinish = false;
+
+		try {
+			File oFile = new File(fileName);
+			if ((!oFile.exists()) || (!oFile.canRead())) {
+				return false;
+			}
+			InputStream is = new FileInputStream(oFile);
+			File file = new File(path);
+//			 if(file.exists()){
+//			 file.delete();
+//			 }
+			file.createNewFile();
+			FileOutputStream fos = new FileOutputStream(file);
+			byte[] temp = new byte[1024];
+			int i = 0;
+			while ((i = is.read(temp)) > 0) {
+				fos.write(temp, 0, i);
+			}
+			fos.close();
+			is.close();
+			copyIsFinish = true;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return copyIsFinish;
+	}
+	
+	public static void close() {
+		
+		disconnect_card();
+	}
+	
+	static {
+		System.loadLibrary("doublecard");
+	}
+	private static native boolean connect_card(int type,int paut);
+	private static native boolean disconnect_card();
+}
+
+

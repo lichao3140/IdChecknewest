@@ -1,0 +1,144 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E8E8E8" >
+
+    <include layout="@layout/toolbar"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:layout_gravity="top" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/select_mode"
+            style="@style/SimpleWhiteTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/x10"         
+            android:text="@string/mode_select" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+       	 	android:layout_height="wrap_content"
+        	android:layout_centerVertical="true"
+        	android:orientation="vertical" >
+        	<Button
+                android:id="@+id/serial_mode"
+            	style="@style/SimpleButtonStyle"
+           	 	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/mainmode_serial" 
+            	android:visibility="gone"/>
+            <Button
+            	android:id="@+id/usb_mode"
+            	style="@style/SimpleButtonStyle"
+            	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/mainmode_usb" 
+            	android:visibility="gone"/>
+            <Button
+            	android:id="@+id/bt_mode"
+            	style="@style/SimpleButtonStyle"
+            	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/mainmode_bt" 
+            	android:visibility="gone"/>
+         </LinearLayout>
+         <LinearLayout
+            	android:layout_width="match_parent"
+       	 		android:layout_height="wrap_content"
+        		android:layout_centerVertical="true"
+        		android:orientation="vertical" >
+			<Button
+            	android:id="@+id/idserial_mode"
+            	style="@style/SimpleButtonStyle"
+           	 	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/mode_serial" 
+            	android:layout_below= "@+id/select_mode"
+            	android:visibility="gone"/>
+
+        	<Button
+            	android:id="@+id/idusb_mode"
+            	style="@style/SimpleButtonStyle"
+            	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/mode_usb" 
+            	android:layout_below= "@+id/select_mode"
+            	android:visibility="gone"/>
+        	 <Button
+            	android:id="@+id/tusb_mode"
+            	style="@style/SimpleButtonStyle"
+            	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/tmode_usb" 
+            	android:layout_below= "@+id/idusb_mode"
+            	android:visibility="gone"/>
+         
+         	<Button
+            	android:id="@+id/tserial_mode"
+            	style="@style/SimpleButtonStyle"
+           	 	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="@string/tmode_serial" 
+            	android:layout_below= "@+id/idserial_mode"
+            	android:visibility="gone"/>
+         	
+         	<Button
+            	android:id="@+id/only_idcard"
+            	style="@style/SimpleButtonStyle"
+           	 	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="USB只读身份证" 
+            	android:layout_below= "@+id/tserial_mode"
+            	android:visibility="gone"/>
+         	<Button
+            	android:id="@+id/only_finger"
+            	style="@style/SimpleButtonStyle"
+           	 	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="只读指纹" 
+            	android:layout_below= "@+id/only_idcard"/>
+         	</LinearLayout>
+         	<Button
+                android:id="@+id/simcard_read"
+            	style="@style/SimpleButtonStyle"
+           	 	android:layout_width="wrap_content"
+            	android:layout_height="wrap_content"
+            	android:background="@drawable/button_background"
+            	android:layout_gravity="center_horizontal"
+            	android:text="sim卡读写" />
+         	<TextView
+            style="@style/SimpleWhiteTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_margin="@dimen/x10"
+            android:text="IDCardTest_V1.1_20180122" />                  
+    </LinearLayout>
+
+</RelativeLayout>

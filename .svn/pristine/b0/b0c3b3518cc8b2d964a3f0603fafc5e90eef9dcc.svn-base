@@ -1,0 +1,15 @@
+package com.telpo.typeAcheck;
+
+import java.io.Serializable;
+
+public class TASectorInfo implements Serializable{
+	
+	private String sectordata;
+	
+	public String getSectorData() {
+		return sectordata;
+	}
+	public void setSectorData(String sectordata) {
+		this.sectordata = sectordata;
+	}
+}

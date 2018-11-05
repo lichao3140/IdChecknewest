@@ -1,0 +1,25 @@
+package com.telpo.typeAcheck;
+
+import java.io.Serializable;
+
+import android.content.Context;
+
+
+public class TAInfo implements Serializable{
+	
+	private static Context mContext = null;
+	
+	private String num;
+	
+	public synchronized static void open(Context context){
+		mContext = context;
+	}
+	
+	public String getNum(){
+		return num;
+	}
+	public void setNum(String num){
+		this.num = num;
+	}
+}
+
